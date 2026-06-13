@@ -198,7 +198,7 @@ def get_args():
     parser.add_argument(
         "--output-path",
         type=str,
-        default="japan_traveling_reel_summary.json",
+        default="traveling_reel_summary.json",
         help="The path to where the final JSON object will be outputted to."
     )
 
