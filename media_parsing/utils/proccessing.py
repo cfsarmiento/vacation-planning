@@ -55,10 +55,15 @@ def process_video(video_file, model, processor, config):
     - response: the string of text that summarizes the video
     """
 
-    # Convert the video into individual frames (one every few seconds)
+    # Convert the video into individual frames (one every few seconds), downscaling
+    # to fit within a 512x512 box for memory usage optimization
     print("Converting video to frames...")
     os.makedirs("frames", exist_ok=True)
-    command = ["ffmpeg", "-i", video_file, "-vf", "fps=1/3", "frames/frame%04d.jpg"]
+    command = [
+        "ffmpeg", "-i", video_file,
+        "-vf", "fps=1/3,scale=w=512:h=512:force_original_aspect_ratio=decrease",
+        "frames/frame%04d.jpg"
+    ]
     subprocess.run(command)
 
     # Process the frames, capping the total so we don't run the VLM out of memory
