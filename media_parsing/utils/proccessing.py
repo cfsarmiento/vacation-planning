@@ -5,6 +5,7 @@ import shutil
 import re
 import argparse
 
+import mlx.core as mx
 import mlx_whisper
 from mlx_vlm import load as vlm_load, generate as vlm_generate
 from mlx_lm import load as lm_load, generate as lm_generate
@@ -180,6 +181,10 @@ def cleanup():
     # Remove the frames directory recursively
     if os.path.exists("frames"):
         shutil.rmtree("frames")
+    
+    # Clear GPU memory buffers
+    mx.clear_cache()
+
     print("Cleanup complete!")
 
 
