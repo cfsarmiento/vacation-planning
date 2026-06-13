@@ -18,7 +18,7 @@ following LLMs off of HuggingFace:
 from pathlib import Path
 import json
 
-from media_parsing import (
+from media_parsing.proccessing import (
     process_audio, process_video, configure_vlm, configure_lm, process_summaries
 )
 
@@ -35,32 +35,31 @@ def main():
     text_model, tokenizer = configure_lm()
 
     aggregated_videos = {}
-    is_empty = not any(folder.iterdir())
-    if not is_empty:
-        
+    videos = sorted(folder.glob("*.mp4"))
+    video_count = len(videos)
+    if video_count:
+
         # Iterate through each video
-        video_count = len(folder)
         print(f"Proccessing {video_count} videos...\n")
-        for idx, video in enumerate(folder.iterdir()):
-            if video.name.endswith("mp4"):
-                print(f"Processing video {idx + 1}/{video_count}...")
+        for idx, video in enumerate(videos):
+            print(f"Processing video {idx + 1}/{video_count}...")
 
-                # Process the audio
-                transcript = process_audio(video)
+            # Process the audio
+            transcript = process_audio(video)
 
-                # Process the video
-                visual_summary = process_video(video, vision_model, frame_processor, model_config)
+            # Process the video
+            visual_summary = process_video(video, vision_model, frame_processor, model_config)
 
-                # Generate a title and overall summary
-                title, summary = process_summaries(transcript, visual_summary, text_model, tokenizer)
+            # Generate a title and overall summary
+            title, summary = process_summaries(transcript, visual_summary, text_model, tokenizer)
 
-                # Save the output
-                aggregated_videos[title] = {
-                    "summary": summary,
-                    "audio_transcript": transcript,
-                    "video_summary": visual_summary
-                }
-                print(f"Video {idx + 1}/{video_count} processed!")
+            # Save the output
+            aggregated_videos[title] = {
+                "summary": summary,
+                "audio_transcript": transcript,
+                "video_summary": visual_summary
+            }
+            print(f"Video {idx + 1}/{video_count} processed!")
 
     # Write the final output to a JSON object
     print("Saving final output...")
