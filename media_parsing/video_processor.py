@@ -19,7 +19,8 @@ from pathlib import Path
 import json
 
 from media_parsing.proccessing import (
-    process_audio, process_video, configure_vlm, configure_lm, process_summaries
+    process_audio, process_video, configure_vlm, 
+    configure_lm, process_summaries, cleanup
 )
 
 def main():
@@ -59,6 +60,7 @@ def main():
                 "audio_transcript": transcript,
                 "video_summary": visual_summary
             }
+            cleanup()
             print(f"Video {idx + 1}/{video_count} processed!")
 
     # Write the final output to a JSON object

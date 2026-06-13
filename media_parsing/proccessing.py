@@ -1,6 +1,7 @@
 # Imports
 import subprocess
 import os
+import shutil
 
 import mlx_whisper
 from mlx_vlm import load as vlm_load, generate as vlm_generate
@@ -46,23 +47,32 @@ def process_video(video_file, model, processor, config):
     - model: the MLX model object
     - processor: the MLX proccessing object
     - config: the MLX configuration object 
+
+    Returns:
+    - response: the string of text that summarizes the video
     """
 
-    # Convert the video into individual frames
+    # Convert the video into individual frames (one every few seconds)
     print("Converting video to frames...")
     os.makedirs("frames", exist_ok=True)
-    command = ["ffmpeg", "-i", video_file, "-vf", "fps=1", "frames/frame%04d.jpg"]
+    command = ["ffmpeg", "-i", video_file, "-vf", "fps=1/3", "frames/frame%04d.jpg"]
     subprocess.run(command)
 
-    # Process the frames
+    # Process the frames, capping the total so we don't run the VLM out of memory
     print("Processing frames...")
+    max_frames = 12
     frames = sorted([f"frames/{f}" for f in os.listdir("frames")])
+    if len(frames) > max_frames:
+        step = len(frames) / max_frames
+        frames = [frames[int(i * step)] for i in range(max_frames)]
     prompt = "Create a general summary of the given video. Extract resturant names, place names, neighborhoods, locations visible/mentioned, and any other pertinent information described in the video."
     formatted_prompt = apply_chat_template(processor, config, prompt, num_images=len(frames))
     processed = vlm_generate(model, processor, formatted_prompt, frames)
+    response = getattr(processed, "text", processed)
     print("Frames processed!")
 
-    return processed
+    # Newer mlx_vlm returns a GenerationResult object; keep only the text
+    return response
 
 
 def process_summaries(audio_transcript, video_summary, model, tokenizer_obj):
@@ -151,3 +161,19 @@ def inference(prompt, llm, tokenizer, token_max):
     print("Text model inference complete")
 
     return response
+
+
+def cleanup():
+    '''
+    Helper function to cleanup any generated artifacts
+    '''
+
+    # Remove the extracted audio
+    print("Cleaning up generated artifacts...")
+    if os.path.exists("audio.wav"):
+        os.remove("audio.wav")
+
+    # Remove the frames directory recursively
+    if os.path.exists("frames"):
+        shutil.rmtree("frames")
+    print("Cleanup complete!")
