@@ -68,7 +68,8 @@ def main():
             title, summary = process_summaries(transcript, visual_summary, text_model, tokenizer)
 
             # Save the output
-            aggregated_videos[title] = {
+            aggregated_videos[video.name] = {
+                "title": title,
                 "summary": summary,
                 "audio_transcript": transcript,
                 "video_summary": visual_summary

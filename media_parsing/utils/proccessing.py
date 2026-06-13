@@ -27,16 +27,21 @@ def process_audio(video_file):
 
     # Extract the audio
     print("Extracting audio from the video...")
-    command = ["ffmpeg", "-i", video_file, "-ar", "16000", "audio.wav"]
-    subprocess.run(command)
+    transcript = "Could not transcribe."
+    try:
+        command = ["ffmpeg", "-i", video_file, "-ar", "16000", "audio.wav"]
+        subprocess.run(command)
 
-    # Transcribe using the model
-    print("Transcribing the audio...")
-    transcript = mlx_whisper.transcribe(
-        "audio.wav", 
-        path_or_hf_repo="mlx-community/whisper-large-v3-turbo"
-    )["text"]
-    print("Audio transcribed!")
+        # Transcribe using the model
+        print("Transcribing the audio...")
+        transcript = mlx_whisper.transcribe(
+            "audio.wav", 
+            path_or_hf_repo="mlx-community/whisper-large-v3-turbo"
+        )["text"]
+        print("Audio transcribed!")
+
+    except Exception as e:
+        print(f"Could not transcribe audio, setting a placeholder transcription: {e}")
 
     return transcript
 
@@ -58,28 +63,38 @@ def process_video(video_file, model, processor, config):
     # Convert the video into individual frames (one every few seconds), downscaling
     # to fit within a 512x512 box for memory usage optimization
     print("Converting video to frames...")
-    os.makedirs("frames", exist_ok=True)
-    command = [
-        "ffmpeg", "-i", video_file,
-        "-vf", "fps=1/3,scale=w=512:h=512:force_original_aspect_ratio=decrease",
-        "frames/frame%04d.jpg"
-    ]
-    subprocess.run(command)
+    response = "Could not process frame."
+    try:
+        os.makedirs("frames", exist_ok=True)
+        command = [
+            "ffmpeg", "-i", video_file,
+            "-vf", "fps=1/3,scale=w=512:h=512:force_original_aspect_ratio=decrease",
+            "frames/frame%04d.jpg"
+        ]
+        subprocess.run(command)
 
-    # Process the frames, capping the total so we don't run the VLM out of memory
-    print("Processing frames...")
-    max_frames = 12
-    frames = sorted([f"frames/{f}" for f in os.listdir("frames")])
-    if len(frames) > max_frames:
-        step = len(frames) / max_frames
-        frames = [frames[int(i * step)] for i in range(max_frames)]
-    prompt = "Create a general summary of the given video. Extract resturant names, place names, neighborhoods, locations visible/mentioned, and any other pertinent information described in the video."
-    formatted_prompt = apply_chat_template(processor, config, prompt, num_images=len(frames))
-    processed = vlm_generate(model, processor, formatted_prompt, frames)
-    response = getattr(processed, "text", processed)
-    print("Frames processed!")
+        # Process the frames, capping the total so we don't run the VLM out of memory
+        print("Processing frames...")
+        max_frames = 12
+        frames = sorted([f"frames/{f}" for f in os.listdir("frames")])
 
-    # Newer mlx_vlm returns a GenerationResult object; keep only the text
+        ## Cap the frames
+        if len(frames) > max_frames:
+            step = len(frames) / max_frames
+            frames = [frames[int(i * step)] for i in range(max_frames)]
+        
+        ## Process the frame with the vision model
+        prompt = "Create a general summary of the given video. Extract resturant names, place names, neighborhoods, locations visible/mentioned, and any other pertinent information described in the video."
+        formatted_prompt = apply_chat_template(processor, config, prompt, num_images=len(frames))
+        processed = vlm_generate(model, processor, formatted_prompt, frames)
+
+        # Newer mlx_vlm returns a GenerationResult object - keep only the text
+        response = getattr(processed, "text", processed)
+        print("Frames processed!")
+    
+    except Exception as e:
+        print(f"Could not process frame, setting a placeholder summary: {e}")
+
     return response
 
 
@@ -95,16 +110,23 @@ def process_summaries(audio_transcript, video_summary, model, tokenizer_obj):
     - tokenizer_obj: the tokenization object used to embed the text
     """
 
-    # Get the title
     print("Generating summaries...")
-    title_prompt = f"/no_think Create a title that concisely summarizes the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Use `Title Case` to format the generated title. Do not output anything except the requested title in the specified format."
-    generated_title = inference(title_prompt, model, tokenizer_obj, token_max=75)
-    generated_title = re.sub(r"<think>[\s\S]*?</think>", "", generated_title).strip()
+    generated_title = "Unprocessed Video"
+    generated_summary = "Could not proccess this video."
+    try:
+        
+        # Get the title
+        title_prompt = f"/no_think Create a title that concisely summarizes the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Use `Title Case` to format the generated title. Do not output anything except the requested title in the specified format."
+        generated_title = inference(title_prompt, model, tokenizer_obj, token_max=75)
+        generated_title = re.sub(r"<think>[\s\S]*?</think>", "", generated_title).strip()
 
-    # Get the summary
-    summary_prompt = f"/no_think Concisely summarize the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Do not output anything except the requested summary."
-    generated_summary = inference(summary_prompt, model, tokenizer_obj, token_max=1024)
-    generated_summary = re.sub(r"<think>[\s\S]*?</think>", "", generated_summary).strip()
+        # Get the summary
+        summary_prompt = f"/no_think Concisely summarize the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Do not output anything except the requested summary."
+        generated_summary = inference(summary_prompt, model, tokenizer_obj, token_max=1024)
+        generated_summary = re.sub(r"<think>[\s\S]*?</think>", "", generated_summary).strip()
+
+    except Exception as e:
+        print(f"Could not generate summaries, using placeholder values: {e}")
 
     return generated_title, generated_summary
 
