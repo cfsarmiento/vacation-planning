@@ -16,6 +16,7 @@ following LLMs off of HuggingFace:
 
 # Imports
 from pathlib import Path
+from datetime import datetime
 import json
 
 from media_parsing.utils.proccessing import (
@@ -24,6 +25,10 @@ from media_parsing.utils.proccessing import (
 )
 
 def main():
+
+    # Record the start time
+    start_time = datetime.now()
+    print(f"Script started at {start_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
 
     # Get CLI args
     args =  get_args()
@@ -78,6 +83,12 @@ def main():
     with open(output_path, "w") as f:
         json.dump(aggregated_videos, f, indent=2)
     print(f"Output saved to {output_path}!")
+
+    # Record the end time and total duration
+    end_time = datetime.now()
+    elapsed = end_time - start_time
+    print(f"\nScript ended at {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Total time elapsed: {elapsed}")
 
 if __name__ == "__main__":
     main()
