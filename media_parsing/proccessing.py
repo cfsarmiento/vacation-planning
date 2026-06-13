@@ -89,11 +89,11 @@ def process_summaries(audio_transcript, video_summary, model, tokenizer_obj):
 
     # Get the title
     print("Generating summaries...")
-    title_prompt = f"Create a title that concisely summarizes the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Use `Title Case` to format the generated title."
+    title_prompt = f"/no_think Create a title that concisely summarizes the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Use `Title Case` to format the generated title. Do not output anything except the requested title in the specified format."
     generated_title = inference(title_prompt, model, tokenizer_obj, token_max=75)
 
     # Get the summary
-    summary_prompt = f"Concisely summarize the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n"
+    summary_prompt = f"/no_think Concisely summarize the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Do not output anything except the requested summary."
     generated_summary = inference(summary_prompt, model, tokenizer_obj, token_max=1024)
 
     return generated_title, generated_summary
