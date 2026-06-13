@@ -2,6 +2,8 @@
 import subprocess
 import os
 import shutil
+import re
+import argparse
 
 import mlx_whisper
 from mlx_vlm import load as vlm_load, generate as vlm_generate
@@ -91,10 +93,12 @@ def process_summaries(audio_transcript, video_summary, model, tokenizer_obj):
     print("Generating summaries...")
     title_prompt = f"/no_think Create a title that concisely summarizes the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Use `Title Case` to format the generated title. Do not output anything except the requested title in the specified format."
     generated_title = inference(title_prompt, model, tokenizer_obj, token_max=75)
+    generated_title = re.sub(r"<think>[\s\S]*?</think>", "", generated_title).strip()
 
     # Get the summary
     summary_prompt = f"/no_think Concisely summarize the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Do not output anything except the requested summary."
     generated_summary = inference(summary_prompt, model, tokenizer_obj, token_max=1024)
+    generated_summary = re.sub(r"<think>[\s\S]*?</think>", "", generated_summary).strip()
 
     return generated_title, generated_summary
 
@@ -177,3 +181,25 @@ def cleanup():
     if os.path.exists("frames"):
         shutil.rmtree("frames")
     print("Cleanup complete!")
+
+
+def get_args():
+    """
+    Helper function to take in CLI arguments via ArgParse
+    """
+
+    parser = argparse.ArgumentParser(description="Data scraper for Instagram reels.")
+
+    parser.add_argument(
+        "--data-path",
+        type=str,
+        help="The path to where all of your .mp4 files to be processed live."
+    )
+    parser.add_argument(
+        "--output-path",
+        type=str,
+        default="japan_traveling_reel_summary.json",
+        help="The path to where the final JSON object will be outputted to."
+    )
+
+    return parser.parse_args()
