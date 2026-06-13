@@ -19,7 +19,7 @@ from pathlib import Path
 from datetime import datetime
 import json
 
-from media_parsing.utils.proccessing import (
+from data_aggregator.utils.proccessing import (
     process_audio, process_video, configure_vlm, 
     configure_lm, process_summaries, cleanup,  get_args
 )
