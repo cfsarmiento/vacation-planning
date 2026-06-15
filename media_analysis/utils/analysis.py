@@ -1,16 +1,3 @@
-# Imports
-import subprocess
-import os
-import shutil
-import re
-import argparse
-
-import mlx.core as mx
-import mlx_whisper
-from mlx_lm import load, generate
-from mlx_vlm.prompt_utils import apply_chat_template
-from mlx_vlm.utils import load_config
-
 
 def select_analysis_type(analysis, given_data):
     """

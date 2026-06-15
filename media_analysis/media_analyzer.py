@@ -16,7 +16,7 @@ from datetime import datetime
 import json
 
 from utils.helpers import (
-    cleanup,  get_args, configure_lm, inference
+    cleanup,  get_args, configure_lm, run_local_inference, send_inference_request
 )
 from media_analysis.utils.analysis import select_analysis_type
 
@@ -29,6 +29,11 @@ def main():
 
     # Get CLI args
     args =  get_args()
+
+    # Parameters
+    MAX_TOKENS = 5000
+    TASK = args.analysis_type
+    SELECTED_MODEL = args.model #"mlx-community/Meta-Llama-3-8B-Instruct-4bit"
 
     # Read the JSON file with the data
     if not args.data_path:
@@ -44,17 +49,25 @@ def main():
     with open(json_path, "r") as f:
         data = json.load(f)
 
-    # Configure the text model
-    selected_model = "mlx-community/Meta-Llama-3-8B-Instruct-4bit"
-    model, tokenizer = configure_lm(selected_model)
-
     # Decide which prompt will be run based off analysis type
-    task = "cluster"
-    prompt = select_analysis_type(analysis=task, given_data=data)
+    prompt = select_analysis_type(analysis=TASK, given_data=data)
 
-    # Run inference
-    max_tokens = 5000
-    response = inference(prompt, model, tokenizer, max_tokens, inference_type=task)
+    # Conduct inference based on the selected model
+    if "mlx" in SELECTED_MODEL:
+
+        # Configure model & run inference
+        model, tokenizer = configure_lm(SELECTED_MODEL)
+        response = run_local_inference(
+            prompt, model, tokenizer, MAX_TOKENS, inference_type=TASK
+        )
+
+    elif "claude" in SELECTED_MODEL:
+
+        # Send inference request to the Anthropic servers
+        claude_client, _ = configure_lm(SELECTED_MODEL)
+        response = send_inference_request(
+            prompt, claude_client, MAX_TOKENS, SELECTED_MODEL, inference_type=TASK
+        )
 
     # Write the markdown output to file
     print("Saving final output...")

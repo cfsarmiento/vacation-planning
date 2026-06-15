@@ -5,8 +5,7 @@ import argparse
 
 import mlx.core as mx
 from mlx_lm import load, generate
-from mlx_vlm.prompt_utils import apply_chat_template
-from mlx_vlm.utils import load_config
+import anthropic
 
 # ---------------------------- Helper Functions ----------------------------
 
@@ -28,10 +27,40 @@ def get_args():
         default="traveling_reel_summary.json",
         help="The path to where the final JSON object will be outputted to."
     )
+    parser.add_argument(
+        "--model",
+        type=str,
+        default="claude-sonnet-4-6",
+        help="The model to use for inference."
+    )
+    parser.add_argument(
+        "--analysis-type",
+        type=str,
+        default="cluster",
+        help="The type of analysis to conduct on the data."
+    )
 
     return parser.parse_args()
 
-def inference(prompt, llm, tokenizer, token_max, inference_type="video_processing"):
+
+def get_messages(given_prompt, task):
+    """
+    Helper method that gets the list of messages to send for inference
+
+    Params:
+    - given_prompt: the string that represents the main prompt to be passed along.
+    - task: the inference task we would like to complete (['cluster'])
+    """
+
+    prompts = []
+    if task == "cluster":
+        system_prompt = "You are an expert data analyst and knowledge organization specialist. Your strength is identifying patterns, relationships, and natural groupings within complex datasets. You approach analysis systematically, provide clear reasoning for your classifications, and always think about how to communicate findings visually and narratively. When analyzing data, you consider multiple dimensions of similarity—semantic, categorical, temporal, and relational. You produce well-structured markdown output with clear hierarchies, visual diagrams, and comprehensive summaries that make complex patterns accessible. You are thorough, precise, and always explain your clustering logic clearly."
+        prompts.append({"role": "system", "content": system_prompt})
+    prompts.append({"role": "user", "content": given_prompt})
+
+    return prompts
+
+def run_local_inference(prompt, llm, tokenizer, token_max, inference_type="video_processing"):
     """
     Helper function that will run inference through the model.
 
@@ -43,11 +72,7 @@ def inference(prompt, llm, tokenizer, token_max, inference_type="video_processin
     """
 
     # Conform the prompt to the chat template
-    messages = []
-    if inference_type == "cluster":
-        system_prompt = "You are an expert data analyst and knowledge organization specialist. Your strength is identifying patterns, relationships, and natural groupings within complex datasets. You approach analysis systematically, provide clear reasoning for your classifications, and always think about how to communicate findings visually and narratively. When analyzing data, you consider multiple dimensions of similarity—semantic, categorical, temporal, and relational. You produce well-structured markdown output with clear hierarchies, visual diagrams, and comprehensive summaries that make complex patterns accessible. You are thorough, precise, and always explain your clustering logic clearly."
-        messages.append({"role": "system", "content": system_prompt})
-    messages.append({"role": "user", "content": prompt})
+    messages = get_messages(prompt, inference_type)
 
     # Run inference
     print(f"Running text model inference for inference type {inference_type}...")
@@ -58,10 +83,39 @@ def inference(prompt, llm, tokenizer, token_max, inference_type="video_processin
     return response
 
 
+def send_inference_request(prompt, client, token_max, given_model, inference_type="video_processing"):
+    """
+    Helper function to send an inference request to the Anthropic servers 
+    (OpenAI as well in the future)
+
+    Params:
+    - prompt: the prompt we want to send to the server
+    - client: the server client used to interface with the Anthropic servers
+    """
+
+    # Conform the prompt to the chat template
+    formatted_messages = get_messages(prompt, inference_type)
+
+    # Send the request
+    response = client.messages.create(
+        model=given_model,
+        max_tokens=token_max,
+        thinking={"type": "enabled", "budget_tokens": 10000},
+        messages=formatted_messages
+    )
+
+    # Get main generation out
+    for block in response.content:
+        if block.type == "text":
+            generation = block.text
+
+    return generation
+
+
 def cleanup():
-    '''
+    """
     Helper function to cleanup any generated artifacts
-    '''
+    """
 
     # Remove the extracted audio
     print("Cleaning up generated artifacts...")
@@ -86,12 +140,17 @@ def configure_lm(model):
     - model: a string that represents the HuggingFace model we want to run with (currently
     only supports Apple Sillicon architecture through the MLX HF community)
     Returns:
-    - m: the MLX model object
+    - m: the MLX model object OR Claude client
     - t: the MLX tokenizer object
     """
 
     print(f"Configuring the language model w/ {model}...")
-    m, t = load(model)
+    if 'mlx' in model:
+        m, t = load(model)
+    elif 'claude' in model:
+        m = anthropic.Anthropic()
+        t = None
+    
     print(f"{model} configured!")
 
     return m, t

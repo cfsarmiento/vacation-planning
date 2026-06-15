@@ -2,3 +2,4 @@ venv
 __pycache__
 frames
 audio.wav
+.env

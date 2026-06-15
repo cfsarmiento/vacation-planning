@@ -5,7 +5,7 @@ import shutil
 import re
 import argparse
 
-from utils.helpers import inference
+from utils.helpers import run_local_inference
 
 import mlx.core as mx
 import mlx_whisper
@@ -119,12 +119,12 @@ def process_summaries(audio_transcript, video_summary, model, tokenizer_obj):
         
         # Get the title
         title_prompt = f"/no_think Create a title that concisely summarizes the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Use `Title Case` to format the generated title. Do not output anything except the requested title in the specified format."
-        generated_title = inference(title_prompt, model, tokenizer_obj, token_max=75)
+        generated_title = run_local_inference(title_prompt, model, tokenizer_obj, token_max=75)
         generated_title = re.sub(r"<think>[\s\S]*?</think>", "", generated_title).strip()
 
         # Get the summary
         summary_prompt = f"/no_think Concisely summarize the following: \nAudio Transcription: {audio_transcript} \nVideo Summary: {video_summary} \n\n Do not output anything except the requested summary."
-        generated_summary = inference(summary_prompt, model, tokenizer_obj, token_max=1024)
+        generated_summary = run_local_inference(summary_prompt, model, tokenizer_obj, token_max=1024)
         generated_summary = re.sub(r"<think>[\s\S]*?</think>", "", generated_summary).strip()
 
     except Exception as e:
