@@ -4,6 +4,7 @@ mlx-whisper
 mlx-vlm
 mlx-lm
 anthropic
+python-dotenv
 
 # NOTE: ffmpeg is also required but is a system binary, not a pip package.
 # Install it separately, e.g. on macOS: brew install ffmpeg

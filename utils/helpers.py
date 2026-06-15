@@ -6,6 +6,10 @@ import argparse
 import mlx.core as mx
 from mlx_lm import load, generate
 import anthropic
+from dotenv import load_dotenv
+
+# Load environment variables the .env file
+load_dotenv()
 
 # ---------------------------- Helper Functions ----------------------------
 
@@ -96,13 +100,25 @@ def send_inference_request(prompt, client, token_max, given_model, inference_typ
     # Conform the prompt to the chat template
     formatted_messages = get_messages(prompt, inference_type)
 
+    # Format the system prompt for Antrhopic
+    system_prompt = anthropic.NOT_GIVEN
+    chat_messages = []
+    for message in formatted_messages:
+        if message["role"] == "system":
+            system_prompt = message["content"]
+        else:
+            chat_messages.append(message)
+
     # Send the request
+    print(f"Running text model inference for inference type {inference_type}...")
     response = client.messages.create(
         model=given_model,
         max_tokens=token_max,
-        thinking={"type": "enabled", "budget_tokens": 10000},
-        messages=formatted_messages
+        system=system_prompt,
+        thinking={"type": "enabled", "budget_tokens": 1500},
+        messages=chat_messages
     )
+    print("Text model inference complete")
 
     # Get main generation out
     for block in response.content:
