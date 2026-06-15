@@ -115,7 +115,7 @@ def send_inference_request(prompt, client, token_max, given_model, inference_typ
         model=given_model,
         max_tokens=token_max,
         system=system_prompt,
-        thinking={"type": "enabled", "budget_tokens": 1500},
+        thinking={"type": "enabled", "budget_tokens": 2000},
         messages=chat_messages
     )
     print("Text model inference complete")

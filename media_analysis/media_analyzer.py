@@ -31,7 +31,7 @@ def main():
     args =  get_args()
 
     # Parameters
-    MAX_TOKENS = 5000
+    MAX_TOKENS = 20000
     TASK = args.analysis_type
     SELECTED_MODEL = args.model #"mlx-community/Meta-Llama-3-8B-Instruct-4bit"
 
