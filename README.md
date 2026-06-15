@@ -1,1 +1,1 @@
-caffeinate -s python3 -m media_analysis.media_analyzer --data-path /Users/christiansarmiento/Desktop/japan_travel_collection_summary.json --output-path /Users/christiansarmiento/Desktop/japan_travel_collection_cluster_analysis.md
+caffeinate -s python3 -m media_analysis.media_analyzer --data-path /Users/christiansarmientoibm/Documents/GitHub/vacation-planning/japan_travel_collection_summary.json --output-path /Users/christiansarmientoibm/Documents/GitHub/vacation-planning/japan_travel_collection_cluster_analysis.md
