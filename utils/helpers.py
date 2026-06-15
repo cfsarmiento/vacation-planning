@@ -31,7 +31,7 @@ def get_args():
         "--model",
         type=str,
         default="claude-sonnet-4-6",
-        help="The model to use for inference."
+        help="The model to use for inference. If using a local model off HuggingFace, it must be an mlx_community model so that it is compatible with Apple Silicone architecture."
     )
     parser.add_argument(
         "--analysis-type",
