@@ -38,11 +38,11 @@ Requires **Python 3.11** and the **ffmpeg** system binary.
 
 ```bash
 # 1. From the repo root, create and activate a virtual environment
-python3.11 -m venv media_parsing/venv
-source media_parsing/venv/bin/activate
+python3.11 -m venv data_aggregator/venv
+source data_aggregator/venv/bin/activate
 
 # 2. Install the Python dependencies
-pip install -r media_parsing/utils/requirements.txt
+pip install -r data_aggregator/utils/requirements.txt
 
 # 3. Install ffmpeg (system binary, not a pip package)
 brew install ffmpeg
@@ -56,10 +56,10 @@ ffmpeg -version
 
 ## Usage
 
-Run as a module **from the repo root** (so the `media_parsing` package resolves):
+Run as a module **from the repo root** (so the `data_aggregator` package resolves):
 
 ```bash
-python3 -m media_parsing.video_processor --data-path /path/to/your/mp4s
+python3 -m data_aggregator.video_processor --data-path /path/to/your/mp4s
 ```
 
 ### Arguments
@@ -74,13 +74,13 @@ python3 -m media_parsing.video_processor --data-path /path/to/your/mp4s
 Process every `.mp4` in a folder (output goes to the default `traveling_reel_summary.json` in the current directory):
 
 ```bash
-python3 -m media_parsing.video_processor --data-path /Users/christiansarmiento/Desktop/tmp
+python3 -m data_aggregator.video_processor --data-path /Users/christiansarmiento/Desktop/tmp
 ```
 
 Process a folder and write the output to a specific path:
 
 ```bash
-python3 -m media_parsing.video_processor \
+python3 -m data_aggregator.video_processor \
   --data-path /Users/christiansarmiento/Desktop/tmp \
   --output-path /Users/christiansarmiento/Desktop/tmp/traveling_reel_summary.json
 ```
