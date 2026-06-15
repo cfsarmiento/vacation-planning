@@ -65,6 +65,7 @@ def main():
     print(f"Output saved to {output_path}!")
 
     # Record the end time and total duration
+    cleanup()
     end_time = datetime.now()
     elapsed = end_time - start_time
     print(f"\nScript ended at {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
