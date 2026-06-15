@@ -5,6 +5,8 @@ import shutil
 import re
 import argparse
 
+from utils.helpers import inference
+
 import mlx.core as mx
 import mlx_whisper
 from mlx_vlm import load as vlm_load, generate as vlm_generate
@@ -151,87 +153,3 @@ def configure_vlm():
     print("mlx-community/Qwen2-VL-2B-Instruct-4bit configured!")
 
     return m, p, c
-
-
-def configure_lm():
-    """
-    Helper method to configure the language model (LM) used for text processing & generation
-
-    Returns:
-    - m: the MLX model object
-    - t: the MLX tokenizer object
-    """
-
-    print("Configuring the language model w/ mlx-community/Qwen3-8B-4bit...")
-    m, t = lm_load("mlx-community/Qwen3-8B-4bit")
-    print("mlx-community/Qwen3-8B-4bit configured!")
-
-    return m, t
-
-
-# ---------------------------- Helper Functions ----------------------------
-
-
-def inference(prompt, llm, tokenizer, token_max):
-    """
-    Helper function that will run inference through the model.
-
-    Params:
-    - prompt: the given prompt string passed to the model
-    - llm: the text model we will use for infernece
-    - tokenizer: the tokenization object used to convert strings to tokens
-    - token_max: max number of generated tokens
-    """
-
-    # Conform the prompt to the chat template
-    messages = [{"role": "user", "content": prompt}]
-
-    # Run inference
-    print("Running text model inference...")
-    formatted_prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-    response = lm_generate(llm, tokenizer, prompt=formatted_prompt, max_tokens=token_max, verbose=False)
-    print("Text model inference complete")
-
-    return response
-
-
-def cleanup():
-    '''
-    Helper function to cleanup any generated artifacts
-    '''
-
-    # Remove the extracted audio
-    print("Cleaning up generated artifacts...")
-    if os.path.exists("audio.wav"):
-        os.remove("audio.wav")
-
-    # Remove the frames directory recursively
-    if os.path.exists("frames"):
-        shutil.rmtree("frames")
-    
-    # Clear GPU memory buffers
-    mx.clear_cache()
-
-    print("Cleanup complete!")
-
-
-def get_args():
-    """
-    Helper function to take in CLI arguments via ArgParse
-    """
-
-    parser = argparse.ArgumentParser(description="Data scraper for Instagram reels.")
-
-    parser.add_argument(
-        "--data-path",
-        type=str,
-        help="The path to where all of your .mp4 files to be processed live."
-    )
-    parser.add_argument(
-        "--output-path",
-        type=str,
-        default="traveling_reel_summary.json",
-        help="The path to where the final JSON object will be outputted to."
-    )
-
-    return parser.parse_args()

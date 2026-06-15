@@ -20,8 +20,10 @@ from datetime import datetime
 import json
 
 from data_aggregator.utils.proccessing import (
-    process_audio, process_video, configure_vlm, 
-    configure_lm, process_summaries, cleanup,  get_args
+    process_audio, process_video, configure_vlm, process_summaries
+)
+from utils.helpers import (
+    cleanup,  get_args, configure_lm
 )
 
 def main():
@@ -46,7 +48,7 @@ def main():
     vision_model, frame_processor, model_config = configure_vlm()
 
     # Configure the text model
-    text_model, tokenizer = configure_lm()
+    text_model, tokenizer = configure_lm("mlx-community/Qwen3-8B-4bit")
 
     aggregated_videos = {}
     videos = sorted(folder.glob("*.mp4"))
